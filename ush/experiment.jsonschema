@@ -189,13 +189,13 @@
             "GAEAC6",
             "HERA",
             "HERCULES",
-            "JET",
             "LINUX",
             "MACOS",
             "NOAACLOUD",
             "ORION",
             "SINGULARITY",
             "STAMPEDE",
+            "URSA",
             "WCOSS2"
           ],
           "type": "string"
@@ -212,6 +212,13 @@
     "verification": {
       "additionalProperties": true,
       "properties": {
+        "FCST_SMOKE_TYPE": {
+          "enum": [
+            "HRRR",
+            "RRFS"
+          ],
+          "type": "string"
+        },
         "VX_APCP_ACCUMS_HRS": {
           "prefixItems": [
             {
@@ -244,29 +251,60 @@
           ],
           "type": "array"
         },
-        "VX_FIELDS": {
-          "enum": [
-            "ADPSFC",
-            "ADPUPA",
-            "APCP",
-            "ASNOW",
-            "REFC",
-            "RETOP"
-          ],
-          "type": "string"
-        },
         "VX_FIELD_GROUPS": {
           "prefixItems": [
             { "enum": [
               "AOD",
               "APCP",
               "ASNOW",
+              "GOESADP",
+              "GOESAOD",
               "PM10",
               "PM25",
               "REFC",
               "RETOP",
               "SFC",
               "UPA"
+              ]
+            }
+          ],
+          "type": "array"
+        },
+        "VX_MASK": {
+          "prefixItems": [
+            { "enum": [
+              "APL",
+              "ATC",
+              "AZCA",
+              "CAM",
+              "CAR",
+              "CONUS",
+              "EAST",
+              "EAST_OF_ROCKIES",
+              "ECA",
+              "GLF",
+              "GMC",
+              "GRB",
+              "HWI",
+              "LMV",
+              "MDW",
+              "MEX",
+              "NAK",
+              "NAO",
+              "NEC",
+              "NMT",
+              "NPL",
+              "NSA",
+              "NWC",
+              "PRI",
+              "SAO",
+              "SEC",
+              "SMT",
+              "SPL",
+              "SWC",
+              "SWD",
+              "WCA",
+              "WEST"
               ]
             }
           ],

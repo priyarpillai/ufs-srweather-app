@@ -32,10 +32,10 @@ If non-default parameters are selected for the variables in this section, they s
    Setting ``RUN_ENVIR`` to "community" is recommended in most cases for users who are not running in NCO's production environment. Valid values: ``"nco"`` | ``"community"``
 
 ``MACHINE``: (Default: "BIG_COMPUTER")
-   The machine (a.k.a. platform or system) on which the workflow will run. Currently supported platforms are listed on the :srw-wiki:`SRW App Wiki page <Supported-Platforms-and-Compilers>`. When running the SRW App on any ParallelWorks/NOAA Cloud system, use "NOAACLOUD" regardless of the underlying system (AWS, GCP, or Azure). Valid values: ``"HERA"`` | ``"ORION"`` | ``"HERCULES"`` | ``"JET"`` | ``"DERECHO"`` | ``"GAEA"`` | ``"GAEA-C6"`` |  ``"NOAACLOUD"`` | ``"MACOS"`` | ``"LINUX"`` | ``"SINGULARITY"`` | ``"WCOSS2"`` (Check ``ufs-srweather-app/ush/valid_param_vals.yaml`` for the most up-to-date list of supported platforms.)
+   The machine (a.k.a. platform or system) on which the workflow will run. Currently supported platforms are listed on the :srw-wiki:`SRW App Wiki page <Supported-Platforms-and-Compilers>`. When running the SRW App on any ParallelWorks/NOAA Cloud system, use "NOAACLOUD" regardless of the underlying system (AWS, GCP, or Azure). Valid values: ``"HERA"`` | ``"ORION"`` | ``"HERCULES"`` | ``"DERECHO"`` | ``"GAEAC6"`` |  ``"NOAACLOUD"`` | ``"SINGULARITY"`` | ` (Check ``ufs-srweather-app/ush/experiment.jsonschema`` for the most up-to-date list of platforms where the SRW App can run.)
 
    .. hint::
-      Users who are NOT on a named, supported Level 1 or 2 platform will need to set the ``MACHINE`` variable to ``LINUX`` or ``MACOS``. To combine use of a Linux or MacOS platform with the Rocoto workflow manager, users will also need to set ``WORKFLOW_MANAGER: "rocoto"`` in the ``platform:`` section of ``config.yaml``. This combination will assume a Slurm batch manager when generating the XML. 
+      Users who are NOT on a named, supported Level 1 or 2 platform will need to set their own ``MACHINE`` variable. To combine the use of an unsupported platform with the Rocoto workflow manager, users will also need to set ``WORKFLOW_MANAGER: "rocoto"`` in the ``platform:`` section of ``config.yaml``. This combination will assume a Slurm batch manager when generating the XML. 
 
 ``ACCOUNT``: (Default: "")
    The account under which users submit jobs to the queue on the specified ``MACHINE``. To determine an appropriate ``ACCOUNT`` field for :srw-wiki:`Level 1 <Supported-Platforms-and-Compilers>` systems, users may run the ``groups`` command, which will return a list of projects that the user has permissions for. Not all of the listed projects/groups have an HPC allocation, but those that do are potentially valid account names. On some systems, the ``saccount_params`` command will display additional account details. 
@@ -95,7 +95,10 @@ If non-default parameters are selected for the variables in this section, they s
    The number of cores available per node on the compute platform. Set for supported platforms in ``setup.py``, but it is now also configurable for all platforms.
 
 ``TASKTHROTTLE``: (Default: 1000)
-  The number of active tasks that can be run simultaneously. For Linux/MacOS systems, it makes sense to set this to 1 because these systems often have a small number of available cores/CPUs and therefore less capacity to run multiple tasks simultaneously. 
+  The number of active tasks that can be run simultaneously via Rocoto. For Linux/MacOS systems, it makes sense to set this to 1 because these systems often have a small number of available cores/CPUs and therefore less capacity to run multiple tasks simultaneously. 
+
+``CYCLETHROTTLE``: (Default: 200)
+  The number of active forecast cycles that can be run simultaneously via Rocoto.
 
 ``BUILD_MOD_FN``: (Default: ``'build_{{ user.MACHINE|lower() }}_{{ workflow.COMPILER }}'``)
    Name of an alternative build modulefile to use if running on an unsupported platform. It is set automatically for supported machines.
@@ -120,7 +123,7 @@ Machine-Dependent Parameters
 These parameters vary depending on machine. On :srw-wiki:`Level 1 and 2 <Supported-Platforms-and-Compilers>` systems, the appropriate values for each machine can be viewed in the ``ush/machine/<platform>.sh`` scripts. To specify a value other than the default, add these variables and the desired value in the ``config.yaml`` file so that they override the ``config_defaults.yaml`` and machine default values. 
 
 ``PARTITION_DEFAULT``: (Default: "")
-   This variable is only used with the Slurm job scheduler (i.e., when ``SCHED: "slurm"``). This is the default partition to which Slurm submits workflow tasks. If the task's ``PARTITION_HPSS`` or ``PARTITION_FCST`` (see below) parameters are **not** specified, the task will be submitted to the default partition indicated in the ``PARTITION_DEFAULT`` variable. If this value is not set or is set to an empty string, it will be (re)set to a machine-dependent value. Options are machine-dependent and include: ``""`` | ``"hera"`` | ``"normal"`` | ``"orion"`` | ``"sjet"`` | ``"vjet"`` | ``"kjet"`` | ``"xjet"`` | ``"workq"``
+   This variable is only used with the Slurm job scheduler (i.e., when ``SCHED: "slurm"``). This is the default partition to which Slurm submits workflow tasks. If the task's ``PARTITION_HPSS`` or ``PARTITION_FCST`` (see below) parameters are **not** specified, the task will be submitted to the default partition indicated in the ``PARTITION_DEFAULT`` variable. If this value is not set or is set to an empty string, it will be (re)set to a machine-dependent value. Options are machine-dependent and include: ``""`` | ``"hera"`` | ``"normal"`` | ``"orion"`` | ``"workq"``
 
 ``QUEUE_DEFAULT``: (Default: "")
    The default queue or QOS to which workflow tasks are submitted (QOS is Slurm's term for queue; it stands for "Quality of Service"). If the task's ``QUEUE_HPSS`` or ``QUEUE_FCST`` parameters (see below) are not specified, the task will be submitted to the queue indicated by this variable. If this value is not set or is set to an empty string, it will be (re)set to a machine-dependent value. Options are machine-dependent and include: ``""`` | ``"batch"`` | ``"dev"`` | ``"normal"`` | ``"regular"`` | ``"workq"``
@@ -132,7 +135,7 @@ These parameters vary depending on machine. On :srw-wiki:`Level 1 and 2 <Support
    Tasks that get or create links to external model files are submitted to this queue, or QOS (QOS is Slurm's term for queue; it stands for "Quality of Service"). These links are needed to generate initial conditions (:term:`ICs`) and lateral boundary conditions (:term:`LBCs`) for the experiment. If this value is not set or is set to an empty string, it will be (re)set to a machine-dependent value. Options are machine-dependent and include: ``""`` | ``"batch"`` | ``"dev_transfer"`` | ``"normal"`` | ``"regular"`` | ``"workq"``
 
 ``PARTITION_FCST``: (Default: "")
-   This variable is only used with the Slurm job scheduler (i.e., when ``SCHED: "slurm"``). The task that runs forecasts is submitted to this partition. If this variable is not set or is set to an empty string, it will be (re)set to a machine-dependent value. Options are machine-dependent and include: ``""`` | ``"hera"`` | ``"normal"`` | ``"orion"`` | ``"sjet"`` | ``"vjet"`` | ``"kjet"`` | ``"xjet"`` | ``"workq"``
+   This variable is only used with the Slurm job scheduler (i.e., when ``SCHED: "slurm"``). The task that runs forecasts is submitted to this partition. If this variable is not set or is set to an empty string, it will be (re)set to a machine-dependent value. Options are machine-dependent and include: ``""`` | ``"hera"`` | ``"normal"`` | ``"orion"`` | ``"workq"``
 
 ``QUEUE_FCST``: (Default: "")
    The task that runs a forecast is submitted to this queue, or QOS (QOS is Slurm's term for queue; it stands for "Quality of Service"). If this variable is not set or set to an empty string, it will be (re)set to a machine-dependent value. Options are machine-dependent and include: ``""`` | ``"batch"`` | ``"dev"`` | ``"normal"`` | ``"regular"`` | ``"workq"``
@@ -516,24 +519,25 @@ CCPP Parameter
    
    **Current supported settings for the CCPP parameter are:** 
 
-   | ``"FV3_GFS_v16"`` 
-   | ``"FV3_RRFS_v1beta"`` 
+   | ``"FV3_GFS_v16"``  
    | ``"FV3_HRRR"``
+   | ``"FV3_HRRR_gf"``
    | ``"FV3_WoFS_v0"``
    | ``"FV3_RAP"``
+   | ``"RRFS_sas"`` 
 
-   Other valid values can be found in the ``ush/valid_param_vals.yaml`` `file <https://github.com/ufs-community/ufs-srweather-app/blob/release/public-v2.2.0/ush/valid_param_vals.yaml>`__, but users cannot expect full support for these schemes.
+   Other valid parameter values are now defined in the ``ush/experiment.jsonschema`` `file <https://github.com/ufs-community/ufs-srweather-app/blob/develop/ush/experiment.jsonschema>`__ and the ``ush/user.jsonschema`` `file <https://github.com/ufs-community/ufs-srweather-app/blob/develop/ush/user.jsonschema>`__. The ``user.jsonschema`` file validates parameters specific to the machine generating the experiment, while ``experiment.jsonschema`` checks all other experiment parameters. Together, they replace the previous ``ush/valid_param_vals.yaml`` file.
 
 ``CCPP_PHYS_SUITE_FN``: (Default: ``'suite_{{ workflow.CCPP_PHYS_SUITE }}.xml'``)
    The name of the suite definition file (SDF) used for the experiment. 
 
-``CCPP_PHYS_SUITE_IN_CCPP_FP``: (Default: ``'{{ user.UFS_WTHR_MDL_DIR }}/FV3/ccpp/suites/{{ workflow.CCPP_PHYS_SUITE_FN }}'``)
+``CCPP_PHYS_SUITE_IN_CCPP_FP``: (Default: ``'{{ user.UFS_WTHR_MDL_DIR }}/UFSATM/ccpp/suites/{{ workflow.CCPP_PHYS_SUITE_FN }}'``)
    The full path to the suite definition file (SDF) in the forecast model's directory structure (e.g., ``/path/to/ufs-srweather-app/sorc/ufs-weather-model/FV3/ccpp/suites/$CCPP_PHYS_SUITE_FN``). 
 
 ``CCPP_PHYS_SUITE_FP``: (Default: ``'{{ workflow.EXPTDIR }}/{{ workflow.CCPP_PHYS_SUITE_FN }}'``)
    The full path to the suite definition file (SDF) in the experiment directory. 
 
-``CCPP_PHYS_DIR``: (Default: ``'{{ user.UFS_WTHR_MDL_DIR }}/FV3/ccpp/physics/physics/SFC_Models/Land/Noahmp'``)
+``CCPP_PHYS_DIR``: (Default: ``'{{ user.UFS_WTHR_MDL_DIR }}/UFSATM/ccpp/physics/physics/SFC_Models/Land/Noahmp'``)
    The directory containing the CCPP physics source code. This is needed to link table(s) contained in that repository. 
 
 Field Dictionary Parameters
@@ -585,6 +589,8 @@ Predefined Grid Parameters
    **Other valid values include:**
 
    | ``"AQM_NA_13km"``
+   | ``"SUBCONUS_CO_3km"``
+   | ``"SUBCONUS_CO_1km"``
    | ``"GSD_HRRR_25km"``
    | ``"RRFS_AK_13km"``
    | ``"RRFS_AK_3km"`` 
@@ -856,7 +862,7 @@ File and Directory Parameters
 --------------------------------
 
 ``EXTRN_MDL_SYSBASEDIR_ICS``: (Default: '')
-   A known location of a real data stream on a given platform. This is typically a real-time data stream as on Hera, Jet, or WCOSS. External model files for generating :term:`ICs` on the native grid should be accessible via this data stream. The way the full path containing these files is constructed depends on the user-specified external model for ICs (defined above in :numref:`Section %s <basic-get-extrn-ics>` ``EXTRN_MDL_NAME_ICS``).
+   A known location of a real data stream on a given platform. This is typically a real-time data stream as on Hera, Ursa, or WCOSS. External model files for generating :term:`ICs` on the native grid should be accessible via this data stream. The way the full path containing these files is constructed depends on the user-specified external model for ICs (defined above in :numref:`Section %s <basic-get-extrn-ics>` ``EXTRN_MDL_NAME_ICS``).
 
    .. note::
       This variable must be defined as a null string in ``config_defaults.yaml`` so that if it is specified by the user in the experiment configuration file (``config.yaml``), it remains set to those values, and if not, it gets set to machine-dependent values.
@@ -913,7 +919,7 @@ File and Directory Parameters
 --------------------------------
 
 ``EXTRN_MDL_SYSBASEDIR_LBCS``: (Default: '')
-   Same as ``EXTRN_MDL_SYSBASEDIR_ICS`` but for :term:`LBCs`. A known location of a real data stream on a given platform. This is typically a real-time data stream as on Hera, Jet, or WCOSS. External model files for generating :term:`LBCs` on the native grid should be accessible via this data stream. The way the full path containing these files is constructed depends on the user-specified external model for LBCs (defined above in :numref:`Section %s <basic-get-extrn-lbcs>` ``EXTRN_MDL_NAME_LBCS`` above).
+   Same as ``EXTRN_MDL_SYSBASEDIR_ICS`` but for :term:`LBCs`. A known location of a real data stream on a given platform. This is typically a real-time data stream as on Hera or WCOSS. External model files for generating :term:`LBCs` on the native grid should be accessible via this data stream. The way the full path containing these files is constructed depends on the user-specified external model for LBCs (defined above in :numref:`Section %s <basic-get-extrn-lbcs>` ``EXTRN_MDL_NAME_LBCS`` above).
 
    .. note::
       This variable must be defined as a null string in ``config_defaults.yaml`` so that if it is specified by the user in the experiment configuration file (``config.yaml``), it remains set to those values, and if not, it gets set to machine-dependent values.
@@ -1333,7 +1339,7 @@ POINT_SOURCE Configuration Parameters
 ------------------------------------------------
 Non-default parameters for the ``task_point_source`` tasks are set in the ``task_point_source:`` section of the ``config.yaml`` file.
 
-``PT_SRC_SUBDIR``: (Default: ``"NEI2016v1/v2023-01-PT"``)
+``PT_SRC_SUBDIR``: (Default: ``"NEMO/NEI2019/v2023-03/PT"``)
    Subdirectory structure of point source data under ``FIXemis``.
    Full path: ``FIXemis/PT_SRC_SUBDIR``
 
@@ -1585,7 +1591,7 @@ Non-default parameters for verification tasks are set in the ``verification:`` s
   The verification tasks in the SRW App are based on the :ref:`METplus <MetplusComponent>`
   verification software developed at the Developmental Testbed Center (:term:`DTC`).  
   :ref:`METplus <MetplusComponent>` is a scientific verification framework that spans a wide range of temporal and spatial scales. 
-  Full documentation for METplus is available on the `METplus website <https://dtcenter.org/community-code/metplus>`__.
+  Full documentation for METplus is available on the `METplus website <https://dtcenter.org/software-tools/metplus>`__.
 
 .. _METParamNote:
 
@@ -1660,21 +1666,23 @@ VX Parameters for Observations
       * NDAS (NAM Data Assimilation System)
       * AERONET (Aerosol Robotic Network)
       * AIRNOW (AirNow air quality reports)
+      * GOESAOD (GOES satellite Aerosol Optical Depth)
+      * GOESADP (GOES satellite Aerosol Detection Product)
 
    The script ``ush/get_obs.py`` contains further details on the files and
    directory structure of each obs type.
 
-``[CCPA|NOHRSC|MRMS|NDAS|AERONET|AIRNOW]_OBS_AVAIL_INTVL_HRS``: (Defaults: [1|6|1|1|24|1])
+``[CCPA|NOHRSC|MRMS|NDAS|AERONET|AIRNOW|GOESAOD|GOESADP]_OBS_AVAIL_INTVL_HRS``: (Defaults: [1|6|1|1|24|1|1|1])
   Time interval (in hours) at which the various types of obs are available
-  on NOAA's HPSS. 
+  in the default location (see ``OBS_DATA_STORE_`` variables)
 
-  Note that MRMS files are in fact available every few minutes, but here
+  Note that MRMS and GOES files are in fact available every few minutes, but here
   we set the obs availability interval to 1 hour because currently that
   is the shortest output interval for forecasts, i.e. the forecasts cannot
   (yet) support sub-hourly output.
 
-``[CCPA|NOHRSC|MRMS|NDAS|AERONET|AIRNOW]_OBS_DIR``: (Default: ``"{{ workflow.EXPTDIR }}/obs_data/[ccpa|nohrsc|mrms|ndas|aeronet|airnow]"``)
-   Base directory in which CCPA, NOHRSC, MRMS, NDAS, AERONET, or AIRNOW obs files needed by
+``[CCPA|NOHRSC|MRMS|NDAS|AERONET|AIRNOW|GOESAOD|GOESADP]_OBS_DIR``: (Default: ``"{{ workflow.EXPTDIR }}/obs_data/[ccpa|nohrsc|mrms|ndas|aeronet|airnow|goesaod|goesadp]"``)
+   Base directory in which CCPA, NOHRSC, MRMS, NDAS, AERONET, AIRNOW, or GOES obs files needed by
    the verification tasks are located.  If the files do not exist, they
    will be retrieved and placed under this directory.  Note that:
 
@@ -1687,7 +1695,7 @@ VX Parameters for Observations
      that need to be corrected during obs retrieval.  This is described
      in more detail in the script ``ush/get_obs.py``.
 
-``OBS_[CCPA|NOHRSC|MRMS|NDAS|AERONET|AIRNOW]_FN_TEMPLATES``:
+``OBS_[CCPA|NOHRSC|MRMS|NDAS|AERONET|AIRNOW|GOESAOD|GOESADP]_FN_TEMPLATES``:
      **Defaults:**
 
      ``OBS_CCPA_FN_TEMPLATES``:
@@ -1722,6 +1730,16 @@ VX Parameters for Observations
         .. code-block:: console
 
            [ 'PM', '{valid?fmt=%Y%m%d}/HourlyData_{valid?fmt=%Y%m%d%H}.dat' ]
+
+     ``OBS_GOESAOD_FN_TEMPLATES``:
+        .. code-block:: console
+
+           [ 'GOESAOD', '{valid?fmt=%Y%m%d}/OR_ABI-L2-AODF_G16_{valid?fmt=%Y%m%d%H}.nc' ]
+
+     ``OBS_GOESADP_FN_TEMPLATES``:
+        .. code-block:: console
+
+           [ 'GOESADP', '{valid?fmt=%Y%m%d}/OR_ABI-L2-ADPF_G16_{valid?fmt=%Y%m%d%H}.nc' ]
 
    File name templates for various obs types.  These are meant to be used
    in METplus configuration files and thus contain METplus time formatting
@@ -1864,12 +1882,15 @@ VX Parameters for Observations
    For more information see the
    `METplus users guide <https://metplus.readthedocs.io/projects/met/en/latest/Users_Guide/reformat_point.html#ascii2nc-tool>`_
 
+``FCST_SMOKE_TYPE``: (Default: ``RRFS``)
+   Different forecast model data have different particulate matter variables that must be verified differently
+   with AIRNOW observations.  Valid options are ``RRFS`` and ``HRRR``.
 
-``OBS_DATA_STORE_AIRNOW``: (Default: ``hpss``)
-   Location to retrieve observation data from. Valid values are "aws" and/or "hpss", see
+``OBS_DATA_STORE_[CCPA|NOHRSC|MRMS|NDAS|AERONET|AIRNOW|GOESAOD|GOESADP]``: (Defaults: ``[hpss|hpss|hpss|hpss|hpss|hpss|aws|aws]``)
+   Data repository to retrieve observation data from. Valid values are "aws" and/or "hpss", see
    ``parm/data_locations.yaml`` for info on these data stores.
 
-``OBS_NDAS_SFCandUPA_FN_TEMPLATE_PB2NC_OUTPUT``: (Default: ``'${OBS_NDAS_FN_TEMPLATES[1]}.nc'``)
+``OBS_NDAS_SFCandUPA_FN_TEMPLATE_PB2NC_OUTPUT``: (Default: ``'{{ verification.OBS_NDAS_FN_TEMPLATES[1] }}.nc'``)
    METplus template for the names of the NetCDF files generated by the
    workflow verification tasks that call METplus's Pb2nc tool on the 
    prepbufr files in NDAS observations.  These files will contain the
@@ -1909,7 +1930,7 @@ VX Parameters for Forecasts
 
    .. code-block:: console
  
-      {% if user.RUN_ENVIR == "nco" %}${NET_default}.{init?fmt=%Y%m%d?shift=-${time_lag}}/{init?fmt=%H?shift=-${time_lag}}{% else %}{init?fmt=%Y%m%d%H?shift=-${time_lag}}{{ "/${ensmem_name}" if global.DO_ENSEMBLE }}/postprd{% endif %}
+      {% if user.RUN_ENVIR == "nco" %}{{ nco.NET_default }}.{init?fmt=%Y%m%d?shift=-${time_lag}}/{init?fmt=%H?shift=-${time_lag}}{% else %}{init?fmt=%Y%m%d%H?shift=-${time_lag}}{{ "/${ensmem_name}" if global.DO_ENSEMBLE }}/postprd{% endif %}
 
    METplus template for the name of the subdirectory containing forecast
    files to use as inputs to the verification tasks.
@@ -1919,7 +1940,7 @@ VX Parameters for Forecasts
 
    .. code-block:: console
  
-      ${NET_default}.t{init?fmt=%H?shift=-${time_lag}}z{{ ".${ensmem_name}" if user.RUN_ENVIR == "nco" and global.DO_ENSEMBLE }}.prslev.f{lead?fmt=%HHH?shift=${time_lag}}.{{ task_run_post.envvars.POST_OUTPUT_DOMAIN_NAME }}.grib2
+      {{ nco.NET_default }}.t{init?fmt=%H?shift=-${time_lag}}z{{ ".${ensmem_name}" if user.RUN_ENVIR == "nco" and global.DO_ENSEMBLE }}.prslev.f{lead?fmt=%HHH?shift=${time_lag}}.{{ task_run_post.envvars.POST_OUTPUT_DOMAIN_NAME }}.grib2
 
    METplus template for the names of the forecast files to use as inputs
    to the verification tasks.
@@ -1929,7 +1950,7 @@ VX Parameters for Forecasts
 
    .. code-block:: console
  
-      ${NET_default}.t{init?fmt=%H}z{{ ".${ensmem_name}" if user.RUN_ENVIR == "nco" and global.DO_ENSEMBLE }}.prslev.{{ task_run_post.envvars.POST_OUTPUT_DOMAIN_NAME }}.${FIELD_GROUP}${ACCUM_HH}h.{valid?fmt=%Y%m%d%H?shift=-${ACCUM_HH}H}_to_{valid?fmt=%Y%m%d%H}.nc
+      {{ nco.NET_default }}.t{init?fmt=%H}z{{ ".${ensmem_name}" if user.RUN_ENVIR == "nco" and global.DO_ENSEMBLE }}.prslev.{{ task_run_post.envvars.POST_OUTPUT_DOMAIN_NAME }}.${FIELD_GROUP}${ACCUM_HH}h.{valid?fmt=%Y%m%d%H?shift=-${ACCUM_HH}H}_to_{valid?fmt=%Y%m%d%H}.nc
 
    METplus template for the names of the NetCDF files generated by the
    workflow verification tasks that call METplus's PcpCombine tool on
@@ -1952,6 +1973,16 @@ VX Parameters for Forecasts
    If more than this number are missing, the verification task will exit
    with an error.
 
+``VX_MASK``: (Default: [])
+   Name(s) of the sub-grid(s) of the forecast domain to verify on. Valid grids are found in the
+   `MET Users Guide <https://metplus.readthedocs.io/projects/met/en/latest/Users_Guide/appendixB.html#grids>`__
+   or under ``ufs-srweather-app/parm/metplus/GRIDNAME.poly``. Users can also include custom verification domains
+   by adding their own ``GRIDNAME.poly`` files in that location. A script for visualizing these custom domains,
+   ``ufs-srweather-app/parm/metplus/plot_met_poly_points.py``, is also included.
+
+``VX_TASKS``: (Default: 1)
+   Number of verification tasks to run in parallel; this works for METplus tools that work on
+   sequential forecast hours, and so can be run simultaneously.
 
 Coupled AQM Configuration Parameters
 =====================================
