@@ -7,7 +7,7 @@ SRW Application Components
 The SRW Application assembles a variety of components, including:
 
 * UFS Utilities
-* UFS Weather Model
+* UFS Weather Model & Components
 * Unified Post Processor
 * METplus verification suite
 * Unified Workflow tools
